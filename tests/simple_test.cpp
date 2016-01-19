@@ -122,6 +122,20 @@ int main()
         //Nano::Signal<void()> signal_four = signal_three;
         //signal_four.emit();
 
+        // moves
+        {
+            // temporarily move signal
+            Nano::Signal<bool(const char*)> signal_tmp { std::move(signal_one) };
+            assert(signal_one.empty());
+
+            // emit
+            signal_tmp.emit("we get signal after move");
+
+            // we can move back
+            signal_one = std::move(signal_tmp);
+            assert(!signal_one.empty());
+        }
+
         // Test removeAll()
         signal_two.connect<Foo, &Foo::handler_b>(&foo);
         signal_two.removeAll();

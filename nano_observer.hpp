@@ -110,6 +110,18 @@ class Observer
     Observer(const Observer& other) = delete; // non construction-copyable
     Observer& operator=(const Observer&) = delete; // non copyable
 
+    Observer(Observer&& other)
+        : head{ other.head }
+    {
+        other.head = nullptr;
+    }
+
+    Observer& operator=(Observer&& rhs)
+    {
+        head = rhs.head;
+        rhs.head = nullptr;
+        return *this;
+    }
 };
 
 } // namespace Nano ------------------------------------------------------------
