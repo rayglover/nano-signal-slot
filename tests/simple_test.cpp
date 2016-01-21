@@ -10,9 +10,13 @@
 // To utilize automatic disconnect you must inherit from Nano::Observer
 struct Foo : public Nano::Observer
 {
+    std::string m_prefix;
+
+    Foo(std::string prefix) : m_prefix{ prefix } { }
+
     bool handler_a(const char* sl) const
     {
-        std::cout << sl << std::endl;
+        std::cout << "[" << m_prefix << "] " << sl << std::endl;
         return true;
     }
     bool handler_b(const char* sl, std::size_t ln)
@@ -64,7 +68,7 @@ int main()
 
     // Create a new scope to test automatic disconnect
     {
-        Foo foo;
+        Foo foo{ "foo" };
 
         // Connect member functions to Nano::Signals
         signal_one.connect<Foo, &Foo::handler_a>(&foo);
@@ -122,18 +126,26 @@ int main()
         //Nano::Signal<void()> signal_four = signal_three;
         //signal_four.emit();
 
-        // moves
+        // move signal
         {
             // temporarily move signal
             Nano::Signal<bool(const char*)> signal_tmp { std::move(signal_one) };
             assert(signal_one.empty());
 
             // emit
-            signal_tmp.emit("we get signal after move");
+            signal_tmp.emit("signal after signal move");
 
             // we can move back
             signal_one = std::move(signal_tmp);
             assert(!signal_one.empty());
+        }
+        // move observer
+        {
+            Foo foo_two { std::move(foo) };
+            signal_one.emit("signal after observer move");
+
+            // move back
+            foo = std::move(foo_two);
         }
 
         // Test removeAll()
