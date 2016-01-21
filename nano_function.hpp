@@ -53,6 +53,16 @@ class Function<RT(Args...)>
         return { pointer, [](void *this_ptr, Args... args)
             { return (static_cast<L*>(this_ptr)->operator()(std::forward<Args>(args)...)); }};
     }
+    template <typename T>
+    static inline bool rebind_cas(DelegateKey& key, T* old_this, T* new_this)
+    {
+        if (key[0] != reinterpret_cast<std::uintptr_t>(old_this))
+        {
+            return false;
+        }
+        key[0] = reinterpret_cast<std::uintptr_t>(new_this);
+        return true;
+    }
     inline operator DelegateKey() const
     {
         return

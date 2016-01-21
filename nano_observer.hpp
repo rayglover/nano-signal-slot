@@ -66,6 +66,32 @@ class Observer
         head = nullptr;
     }
 
+    void rebind(Observer* old_this, Observer* new_this)
+    {
+        for (Node* node = head; node;)
+        {
+            auto& d = node->data;
+            if (d.observer == old_this)
+            {
+                d.observer = new_this;
+
+                // compare + swap delegate
+                Function<void()>::template rebind_cas(
+                    d.delegate, old_this, new_this);
+            }
+            node = node->next;
+        }
+    }
+
+    void rebindAll(Observer* old_this)
+    {
+        for (Node* node = head; node;)
+        {
+            node->data.observer->rebind(old_this, this);
+            node = node->next;
+        }
+    }
+
     bool isEmpty() const
     {
         return head == nullptr;
@@ -114,12 +140,14 @@ class Observer
         : head{ other.head }
     {
         other.head = nullptr;
+        rebindAll(std::addressof(other));
     }
 
     Observer& operator=(Observer&& rhs)
     {
         head = rhs.head;
         rhs.head = nullptr;
+        rebindAll(std::addressof(rhs));
         return *this;
     }
 };
