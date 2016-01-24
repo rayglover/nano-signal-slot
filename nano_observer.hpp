@@ -70,14 +70,10 @@ class Observer
     {
         for (Node* node = head; node;)
         {
-            auto& d = node->data;
-            if (d.observer == old_this)
+            if (Function<void()>::template rebind_cas(
+                    node->data.delegate, old_this, new_this))
             {
-                d.observer = new_this;
-
-                // compare + swap delegate
-                Function<void()>::template rebind_cas(
-                    d.delegate, old_this, new_this);
+                node->data.observer = new_this;
             }
             node = node->next;
         }
@@ -87,7 +83,11 @@ class Observer
     {
         for (Node* node = head; node;)
         {
-            node->data.observer->rebind(old_this, this);
+            if (Function<void()>::template rebind_cas(
+                    node->data.delegate, old_this, this))
+            {
+                node->data.observer->rebind(old_this, this);
+            }
             node = node->next;
         }
     }
