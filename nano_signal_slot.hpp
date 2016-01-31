@@ -37,7 +37,7 @@ class Signal<RT(Args...)> : private Observer
     public:
 
     using Delegate = Function<RT(Args...)>;
-    
+
     //-------------------------------------------------------------------CONNECT
 
     template <typename L>
@@ -78,7 +78,7 @@ class Signal<RT(Args...)> : private Observer
     {
         connect<T, mem_ptr>(std::addressof(instance));
     }
-    
+
     //----------------------------------------------------------------DISCONNECT
 
     template <typename L>
@@ -97,7 +97,7 @@ class Signal<RT(Args...)> : private Observer
     {
         Observer::remove(Delegate::template bind<fun_ptr>());
     }
-    
+
     template <typename T, RT (T::* mem_ptr)(Args...)>
     void disconnect(T* instance)
     {
@@ -119,7 +119,7 @@ class Signal<RT(Args...)> : private Observer
     {
         disconnect<T, mem_ptr>(std::addressof(instance));
     }
-    
+
     //----------------------------------------------------EMIT / EMIT ACCUMULATE
 
     #ifdef NANO_USE_DEPRECATED
@@ -153,6 +153,14 @@ class Signal<RT(Args...)> : private Observer
             (std::forward<Accumulate>(accumulate), std::forward<Uref>(args)...);
     }
 
+    //-------------------------------------------------------------------MAP
+
+    template<typename T, T>
+    struct Map;
+
+    template <typename B, B (*fun_ptr)(Args...)>
+    auto map() { return Map<decltype(fun_ptr), fun_ptr>(*this); }
+
     //-------------------------------------------------------------------UTILITY
 
     bool empty() const
@@ -165,6 +173,29 @@ class Signal<RT(Args...)> : private Observer
         Observer::removeAll();
     }
 
+};
+
+template <typename RT, typename... Args>
+template <typename... B, std::tuple<B...> (*fun_ptr)(Args...)>
+struct Signal<RT(Args...)>::
+    Map<std::tuple<B...> (*)(Args...), fun_ptr>
+{
+    Signal<RT(Args...)>& _s;
+    Map(Signal<RT(Args...)>& s) : _s{ s } { }
+
+    template <typename T, RT (T::* mem_ptr)(B...) const>
+    void connect(T* instance)
+    {
+        _s.insert_sfinae<T>(Delegate::template Map<decltype(fun_ptr), fun_ptr>
+            ::template bind<T, mem_ptr>(instance), instance);
+    }
+
+    template <typename T, RT (T::* mem_ptr)(B...)>
+    void connect(T* instance)
+    {
+        _s.insert_sfinae<T>(Delegate::template Map<decltype(fun_ptr), fun_ptr>
+            ::template bind<T, mem_ptr>(instance), instance);
+    }
 };
 
 } // namespace Nano ------------------------------------------------------------

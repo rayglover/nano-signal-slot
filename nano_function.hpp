@@ -1,6 +1,8 @@
 #ifndef NANO_FUNCTION_HPP
 #define NANO_FUNCTION_HPP
 
+#include "nano_tuple.hpp"
+
 #include <cstdint>
 #include <array>
 
@@ -28,6 +30,8 @@ class Function<RT(Args...)>
         m_stub_ptr(reinterpret_cast<Thunk>(delegate_key[1])) {}
 
     public:
+
+    //-----------------------------------------------------------BIND/REBIND
 
     template <RT (*fun_ptr) (Args...)>
     static inline Function bind()
@@ -63,6 +67,40 @@ class Function<RT(Args...)>
         key[0] = reinterpret_cast<std::uintptr_t>(new_this);
         return true;
     }
+
+    //-------------------------------------------------------------------MAP
+
+    template<typename T, T>
+    struct Map;
+
+    template<typename... B, std::tuple<B...> (*fun_ptr)(Args...)>
+    struct Map<std::tuple<B...> (*)(Args...), fun_ptr>
+    {
+        template <typename T, RT (T::* mem_ptr)(B...) const>
+        static inline Function bind(T* pointer)
+        {
+            return {
+                pointer, [](void* this_ptr, Args... args)
+                {
+                    return apply_tuple(static_cast<T*>(this_ptr), mem_ptr,
+                        (*fun_ptr)(std::forward<Args>(args)...));
+                }
+            };
+        }
+
+        template <typename T, RT (T::* mem_ptr)(B...)>
+        static inline Function bind(T* pointer)
+        {
+            return {
+                pointer, [](void* this_ptr, Args... args)
+                {
+                    return apply_tuple(static_cast<T*>(this_ptr), mem_ptr,
+                        (*fun_ptr)(std::forward<Args>(args)...));
+                }
+            };
+        }
+    };
+
     inline operator DelegateKey() const
     {
         return
