@@ -33,11 +33,11 @@ int main()
         Foo foo;
 
         // Connect member functions to mapped Nano::Signals
-        signal_one.map<std::tuple<const char*, int>, add_one>()
-            .connect<Foo, &Foo::handler_a>(&foo);
+        signal_one.map<const char*, int>()
+            .connect<Foo, &Foo::handler_a, add_one>(&foo);
 
-        signal_one.map<std::tuple<const char*, int>, add_two>()
-            .connect<Foo, &Foo::handler_a>(&foo);
+        signal_one.map<const char*, int>()
+            .connect<Foo, &Foo::handler_a, add_two>(&foo);
 
         // Emit Signals
         signal_one.emit("3");

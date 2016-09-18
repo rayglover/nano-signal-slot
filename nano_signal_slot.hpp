@@ -155,11 +155,11 @@ class Signal<RT(Args...)> : private Observer
 
     //-------------------------------------------------------------------MAP
 
-    template<typename T, T>
+    template<typename... T>
     struct Map;
 
-    template <typename B, B (*fun_ptr)(Args...)>
-    auto map() { return Map<decltype(fun_ptr), fun_ptr>(*this); }
+    template <typename... B>
+    auto map() { return Map<B...>(*this); }
 
     //-------------------------------------------------------------------UTILITY
 
@@ -176,21 +176,20 @@ class Signal<RT(Args...)> : private Observer
 };
 
 template <typename RT, typename... Args>
-template <typename... B, std::tuple<B...> (*fun_ptr)(Args...)>
-struct Signal<RT(Args...)>::
-    Map<std::tuple<B...> (*)(Args...), fun_ptr>
+template <typename... B>
+struct Signal<RT(Args...)>::Map
 {
     Signal<RT(Args...)>& _s;
     Map(Signal<RT(Args...)>& s) : _s{ s } { }
 
-    template <typename T, RT (T::* mem_ptr)(B...) const>
+    template <typename T, RT (T::* mem_ptr)(B...) const, std::tuple<B...> (*fun_ptr)(Args...)>
     void connect(T* instance)
     {
         _s.insert_sfinae<T>(Delegate::template Map<decltype(fun_ptr), fun_ptr>
             ::template bind<T, mem_ptr>(instance), instance);
     }
 
-    template <typename T, RT (T::* mem_ptr)(B...)>
+    template <typename T, RT (T::* mem_ptr)(B...), std::tuple<B...> (*fun_ptr)(Args...)>
     void connect(T* instance)
     {
         _s.insert_sfinae<T>(Delegate::template Map<decltype(fun_ptr), fun_ptr>
