@@ -118,7 +118,7 @@ class Observer
 
     protected:
 
-    ~Observer()
+    virtual ~Observer()
     {
         removeAll();
     }
